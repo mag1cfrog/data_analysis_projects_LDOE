@@ -302,22 +302,17 @@ if __name__ == "__main__":
         results = []
         for result in pool.imap_unordered(process_file_wrapper, [(vector, counter) for vector in vectors]):
             results.append(result)
-    
-    
+     
     # Convert the results into a DataFrame
     flat_results = [item for sublist in results for item in sublist]
     df2 = pd.DataFrame(flat_results)
 
-    
-
     #Regulate the data in school column
-    df2['Student_Name'] = df2['Student_Name'].str.strip()
-    df2['School'] = df2['School'].str.strip()
-    df2['Grade'] = df2['Grade'].str.strip()
-    df2['LASID'] = df2['LASID'].str.strip()
-    df2['School'] = df2['School'].str.strip()
-    df2['School_System'] = df2['School_System'].str.strip()
-    df2['DoB'] = df2['DoB'].str.strip()
+    columns_to_strip = ['Student_Name', 'School', 'Grade', 'LASID', 'School_System', 'DoB']
+
+    for col in columns_to_strip:
+        df2[col] = df2[col].str.strip()
+
     df2['Reading_Performance_Achievement_Level'] = df2['Reading_Performance_Achievement_Level'].str.replace('\n', ' ')
     df2['Literary_Text_Achievement_Level'] = df2['Literary_Text_Achievement_Level'].str.replace('«««', '').str.replace('\n', ' ')
     df2['Informational_Text_Achievement_Level'] = df2['Informational_Text_Achievement_Level'].str.replace('«««', '').str.replace('\n', ' ')
