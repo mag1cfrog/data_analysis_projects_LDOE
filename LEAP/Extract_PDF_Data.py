@@ -1,3 +1,4 @@
+from __future__ import print_function, division
 import os
 import pandas as pd
 import re
@@ -6,17 +7,171 @@ import fitz
 import winsound
 import concurrent.futures
 from tqdm import tqdm
-import cProfile
-import traceback
-import numpy as np
-from process_file2 import process_file, process_file_wrapper
+#from process_file2 import process_file, process_file_wrapper
 from multiprocessing import Pool, cpu_count
 from multiprocessing import Value
 from multiprocessing import Manager, Queue
 from pdfrw import PdfReader, PdfWriter
+import sys
+from multiprocessing import Pool, cpu_count
+import cProfile
+import traceback
+import numpy as np
+from multiprocessing import Pool, cpu_count
+from multiprocessing import Value, Queue
+from datetime import datetime
+
+
+def process_file(vector, counter):
+
+    # recreate the arguments
+    idx = vector[0]  # this is the segment number we have to process
+    cpu = vector[1]  # number of CPUs
+    filename = vector[2]  # document filename
+    C_dict = vector[3]  # the matrix for rendering
+    doc = fitz.open(filename)  # open the document
+    num_pages = doc.page_count  # get number of pages
+
+    # pages per segment: make sure that cpu * seg_size >= num_pages!
+    seg_size = int(num_pages / cpu + 1)
+    seg_from = idx * seg_size  # our first page number
+    seg_to = min(seg_from + seg_size, num_pages)  # last page number
+    data_list = []
+    
+    for i in range(seg_from, seg_to):  # work through our page segment
+        page = doc[i]
+        # Initialize an empty dictionary to store the data            
+        data = {}
+
+        def get_words(name, page=page, C_dict=C_dict):
+            rect = fitz.Rect(C_dict[name])
+            words = page.get_textbox(rect)
+            return words
+
+        data['Page_Number'] = i
+        # Extract the percentages for each achievement level
+        for level in ['Advanced', 'Mastery', 'Basic', 'Approaching_Basic', 'Unsatisfactory']:
+            words = get_words(f'Percent_Achievement_Level_{level}')
+            if words is not None:
+                # Use a regular expression to find all percentages in the text
+                percentages = re.findall(r'(≥?≤?\d+%|NR|N/A)', words)
+                # Check if the percentages were extracted correctly
+                if len(percentages) == 3:
+                    # Store the percentages in the data dictionary
+                    data[f'{level}_School_Percentage'], data[f'{level}_School_System_Percentage'], data[f'{level}_State_Percentage'] = percentages
+                else:
+                    print(f"Unexpected number of percentages for {level} in file {filename} on page {page.number + 1}, text: {words}")
+                    print(len(percentages))
+
+        # Title Section 
+        data['Report_Title'], data['Report_Subject'], data['Report_Season_Year'] = get_words('Report_Title_Section').split('\n')
+
+        # School System Average Score            
+        words = get_words('School_System_Average_Score')
+        if words is not None:           
+            data['School_System_Average_Score'] = words.replace('\n', ' ').replace('SCORE', '') 
+
+        # State average score            
+        words = get_words('State_Average_Score')
+        if words is not None:           
+            data['State_Average_Score'] = words.replace('\n', ' ').replace('SCORE', '')          
+
+        # Personal Informations    
+        words = get_words('Personal_Information')
+
+        if words is not None:
+            data['Student_Name'] = re.search(r'Student: (.*)\n', words).group(1)
+            if 'Grade:' in data['Student_Name']:
+                data['Student_Name'] = data['Student_Name'].split('Grade:')[0]
+            data['Grade'] = re.search(r'Grade: (.*)\n', words).group(1)
+            data['Report_Date'] = re.search(r'Report Date: (.*)\n', words).group(1).strip()
+            data['LASID'] = re.search(r'LASID: (.*)\n', words).group(1)
+            data['School'] = re.search(r'School: (.*)\n', words).group(1)
+            data['School_System'] = re.search(r'School System: (.*)', words).group(1)
+            data['DoB'] = re.search(r'Date of Birth: (.*)\n', words).group(1)
+
+        # Student Score            
+        data['Student_Performance_Score'] = get_words('Student_Performance_Score').replace('\n', ' ').replace('SCORE', '').strip()
+        # Use student score containing * or not to detect if voided
+           
+        # Student Level            
+        words = get_words('Student_Performance_Level')
+        if words is not None:           
+            data['Student_Performance_Level'] = words.replace('\n', ' ').replace('LEVEL', '').strip()  
+
+        #  School System Average Level            
+        words = get_words('School_System_Average_Level')
+        if words is not None:           
+            data['School_System_Average_Level'] = words.replace('\n', ' ').replace('LEVEL', '') 
+
+
+        # State Average Level            
+        words = get_words('State_Average_Level')
+        if words is not None:           
+            data['State_Average_Level'] = words.replace('\n', ' ').replace('LEVEL', '')
+
+        ### Achievement Levels
+        words = get_words('Student_Achievement_Level')
+        if words is not None:
+            data['Student_Performance_Achievement_Level'] = words.replace('\n', ' ').strip()
+        
+        words = get_words('School_System_Average_Achievement_Level')
+        if words is not None:
+            data['School_System_Average_Achievement_Level'] = words.replace('\n', ' ').strip()
+
+        data['State_Average_Achievement_Level_Fixed'] = get_words('State_Average_Achievement_Level_Fixed').replace('\n', ' ').strip()
+
+        # Check if the report is voided
+        if data['Student_Performance_Score'] != '*':
+            data['If_Voided'] = False
+            # Subcategories
+
+            # Reading_Performance_Achievement_Level            
+            columns = ['Reading_Performance_Achievement_Level', 'Literary_Text_Achievement_Level', 'Informational_Text_Achievement_Level', 
+                       'Vocabulary_Achievement_Level', 'Reading_Performance_Achievement_Level_State_Percentages', 'Writing_Performance_Achievement_Level',
+                         'Writing_Performance_Achievement_Level_State_Percentages', 'Written_Expression_Achievement_Level', 'Knowledge&Use_of_Language_Conventions']
+
+            for col in columns:
+                data[col] = get_words(col)
+
+#############################################################  
+        else:
+
+            data['If_Voided'] = True
+#############################################################             
+            
+
+        # Append the data for this page to the list
+        data_list.append(data)       
 
 
 
+        
+        # return the data for this file
+    return data_list
+
+
+def reset_log():
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    log_file = f'process_log_{timestamp}.txt'
+    return log_file
+    
+import logging
+
+def process_file_wrapper(args):
+    log_file = reset_log()
+    logging.basicConfig(filename=log_file, level=logging.INFO)
+    vector, counter = args
+    try:
+        logging.info(f"Process {vector[0]} starting")
+        result = process_file(vector, counter)
+        logging.info(f"Process {vector[0]} finished with {len(result)} results")
+
+        counter.value += len(result)
+        return result
+    except Exception as e:
+        logging.error(f"Process {vector[0]} encountered an error: {e}")
+        return []
 
 def combine_pdfs(Directory, Subjects_in_Headlines, Report_Type):
     
@@ -188,20 +343,22 @@ if __name__ == "__main__":
     subject = 'ELA'
 
     # Split the 'Student_Name' column into two new columns
-    df2[['Student_First_Name', 'Rest']] = df2['Student_Name'].str.split(' ', n=1, expand=True)
+    
+    # Split the 'Student_Name' column by spaces
+    name_split = df2['Student_Name'].str.split(' ')
 
-    # Check if 'Rest' contains a space
-    contains_space = df2['Rest'].str.contains(' ')
+    # Extract the first name
+    df2['Student_First_Name'] = name_split.str[0]
 
-    # If 'Rest' contains a space, split it into 'Middle_Initial' and 'Last_Name'
-    df2.loc[contains_space, ['Student_Middle_Initial', 'Student_Last_Name']] = df2.loc[contains_space, 'Rest'].str.split(' ', n=1, expand=True)
+    # Extract the last name
+    df2['Student_Last_Name'] = name_split.str[-1]
 
-    # If 'Rest' doesn't contain a space, it only contains the last name
-    df2.loc[~contains_space, 'Student_Last_Name'] = df2.loc[~contains_space, 'Rest']
-    df2.loc[~contains_space, 'Student_Middle_Initial'] = np.nan
+    # Extract the middle name or middle initial
+    df2['Student_Middle_Initial'] = name_split.str[1:-1].str.join(' ').str.strip()
 
-    # Now you can drop the 'Rest' column as it's no longer needed
-    df2 = df2.drop(columns='Rest')
+    # Handle cases where there's no middle name or middle initial
+    df2.loc[df2['Student_Middle_Initial'] == '', 'Student_Middle_Initial'] = np.nan
+
 
     # Replace '--/--/----' with np.nan
     df2['DoB'] = df2['DoB'].replace('--/--/----', np.nan)
