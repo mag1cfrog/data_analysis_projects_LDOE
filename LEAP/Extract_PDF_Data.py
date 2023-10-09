@@ -22,7 +22,7 @@ from multiprocessing import Value, Queue
 from datetime import datetime
 
 
-def process_file(vector, counter):
+def process_file(vector):
 
     # recreate the arguments
     idx = vector[0]  # this is the segment number we have to process
@@ -78,17 +78,7 @@ def process_file(vector, counter):
 
         # Personal Informations    
         words = get_words('Personal_Information')
-
-        if words is not None:
-            data['Student_Name'] = re.search(r'Student: (.*)\n', words).group(1)
-            if 'Grade:' in data['Student_Name']:
-                data['Student_Name'] = data['Student_Name'].split('Grade:')[0]
-            data['Grade'] = re.search(r'Grade: (.*)\n', words).group(1)
-            data['Report_Date'] = re.search(r'Report Date: (.*)\n', words).group(1).strip()
-            data['LASID'] = re.search(r'LASID: (.*)\n', words).group(1)
-            data['School'] = re.search(r'School: (.*)\n', words).group(1)
-            data['School_System'] = re.search(r'School System: (.*)', words).group(1)
-            data['DoB'] = re.search(r'Date of Birth: (.*)\n', words).group(1)
+        data['Personal_Information'] = words
 
         # Student Score            
         data['Student_Performance_Score'] = get_words('Student_Performance_Score').replace('\n', ' ').replace('SCORE', '').strip()
@@ -161,13 +151,12 @@ import logging
 def process_file_wrapper(args):
     log_file = reset_log()
     logging.basicConfig(filename=log_file, level=logging.INFO)
-    vector, counter = args
+    vector = args
     try:
         logging.info(f"Process {vector[0]} starting")
-        result = process_file(vector, counter)
+        result = process_file(vector)
         logging.info(f"Process {vector[0]} finished with {len(result)} results")
 
-        counter.value += len(result)
         return result
     except Exception as e:
         logging.error(f"Process {vector[0]} encountered an error: {e}")
@@ -195,7 +184,7 @@ def combine_pdfs(Directory, Subjects_in_Headlines, Report_Type):
     os.makedirs(os.path.join(Directory, 'cache'), exist_ok=True)
 
     # Save the new PDF file
-    writer.write(os.path.join(Directory, 'cache', 'combined.pdf'))
+    writer.write(os.path.join(Directory, 'cache', 'combined_file.pdf'))
     
     # Get the end time
     end_time = time.time()
@@ -279,8 +268,8 @@ if __name__ == "__main__":
 
     combine_pdfs(Directory, Subjects_in_Headlines, Report_Type)
 
-    filename = "cache/combined.pdf"
-    filename = os.path.join(Directory, filename)
+    filename = os.path.join(Directory, "cache", "combined_file.pdf")
+
 
     doc = fitz.open(filename)
     total_pages = len(doc)
@@ -291,51 +280,82 @@ if __name__ == "__main__":
     vectors = [(i, cpu, filename, C_dict) for i in range(cpu)]
     print("Starting %i processes for '%s'." % (cpu, filename))
 
-    # Create a manager object
-    manager = Manager()
-
-    # Create a shared variable for the counter
-    counter = manager.Value('i', 0)
-
     # Create a progress bar
     with Pool() as pool:
         results = []
-        for result in pool.imap_unordered(process_file_wrapper, [(vector, counter) for vector in vectors]):
+        for result in pool.imap_unordered(process_file_wrapper, vectors):
             results.append(result)
      
     # Convert the results into a DataFrame
     flat_results = [item for sublist in results for item in sublist]
     df2 = pd.DataFrame(flat_results)
 
-    #Regulate the data in school column
+    # Old syntax for extracting Student_Name
+    def extract_student_name(info):
+        match = re.search(r'Student: (.*)\n', info)
+        if match:
+            student_name = match.group(1)
+            if 'Grade:' in student_name:
+                student_name = student_name.split('Grade:')[0]
+            return student_name
+        return None
+
+    df2['Student_Name'] = df2['Personal_Information'].apply(extract_student_name)
+
+    # Vectorized extraction for the other fields
+    patterns = {
+        'Grade': r'Grade: (.*?)\n',
+        'Report_Date': r'Report Date: (.*?)\n',
+        'LASID': r'LASID: (.*?)\n',
+        'School': r'School: (.*?)\n',
+        'School_System': r'School System: (.*?)(?:\n|$)',
+        'DoB': r'Date of Birth: (.*?)\n'
+    }
+
+    for column, pattern in patterns.items():
+        df2[column] = df2['Personal_Information'].str.extract(pattern)
+
+
+    # Extract the information using the patterns and store in respective columns
+    for column, pattern in patterns.items():
+        df2[column] = df2['Personal_Information'].str.extract(pattern)
+
+    # If you want to remove the original 'Personal_Information' column after extraction
+    # df2.drop('Personal_Information', axis=1, inplace=True)
+
+
+    # Regulate the data in school column
     columns_to_strip = ['Student_Name', 'School', 'Grade', 'LASID', 'School_System', 'DoB']
 
     for col in columns_to_strip:
         df2[col] = df2[col].str.strip()
 
-    df2['Reading_Performance_Achievement_Level'] = df2['Reading_Performance_Achievement_Level'].str.replace('\n', ' ')
-    df2['Literary_Text_Achievement_Level'] = df2['Literary_Text_Achievement_Level'].str.replace('«««', '').str.replace('\n', ' ')
-    df2['Informational_Text_Achievement_Level'] = df2['Informational_Text_Achievement_Level'].str.replace('«««', '').str.replace('\n', ' ')
-    df2['Vocabulary_Achievement_Level'] = df2['Vocabulary_Achievement_Level'].str.replace('«««', '').str.replace('\n', ' ')
+    columns_to_clean = ['Reading_Performance_Achievement_Level', 'Literary_Text_Achievement_Level', 'Informational_Text_Achievement_Level', 'Vocabulary_Achievement_Level',
+                        'Written_Expression_Achievement_Level', 'Knowledge&Use_of_Language_Conventions', 'Writing_Performance_Achievement_Level']
+
+    for col in columns_to_clean:
+        df2[col] = df2[col].str.replace('«««', '').str.replace('\n', ' ')
+
     df2[['Reading_Performance_Achievement_Level_State_Percentage_Strong', 
         'Reading_Performance_Achievement_Level_State_Percentage_Moderate', 
         'Reading_Performance_Achievement_Level_State_Percentage_Weak']] = df2['Reading_Performance_Achievement_Level_State_Percentages'].str.strip().str.split('\n', expand=True)
-    df2['Writing_Performance_Achievement_Level'] = df2['Writing_Performance_Achievement_Level'].str.replace('«««', '').str.replace('\n', ' ')
+    
+    
     df2[['Writing_Performance_Achievement_Level_State_Percentage_Strong', 
         'Writing_Performance_Achievement_Level_State_Percentage_Moderate', 
         'Writing_Performance_Achievement_Level_State_Percentage_Weak']] = df2['Writing_Performance_Achievement_Level_State_Percentages'].str.strip().str.split('\n', expand=True)
-    df2['Written_Expression_Achievement_Level'] = df2['Written_Expression_Achievement_Level'].str.replace('«««', '').str.replace('\n', ' ')
-    df2['Knowledge&Use_of_Language_Conventions'] = df2['Knowledge&Use_of_Language_Conventions'].str.replace('«««', '').str.replace('\n', ' ')
+
     report_subjects = []
 
     report_subjects = list(df2['Report_Subject'].unique())
+    #print(report_subjects)
 
-#    if len(report_subjects) == 1:
-#        subject = report_subjects[0]
+    if len(report_subjects) == 1:
+        subject = report_subjects[0]
 
-#    if subject == 'English Language Arts':
-#        subject = 'ELA'
-    subject = 'ELA'
+    if subject == 'English Language Arts':
+        subject = 'ELA'
+    #subject = 'ELA'
 
     # Split the 'Student_Name' column into two new columns
     
@@ -396,7 +416,7 @@ if __name__ == "__main__":
 
 
     # specify the file to be deleted
-    filepath = os.path.join(Directory, 'cache', 'combined.pdf')
+    filepath = os.path.join(Directory, 'cache', 'combined_file.pdf')
 
     delete_file(filepath)
 
