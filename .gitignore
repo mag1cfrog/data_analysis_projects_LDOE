@@ -1,5 +1,9 @@
 # Costomized log format
 *.txt
+/**/*.txt
+
+#pycache
+__pycache__/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
