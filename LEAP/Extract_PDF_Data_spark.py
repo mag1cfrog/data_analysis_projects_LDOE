@@ -1,37 +1,26 @@
 from __future__ import print_function, division
 import os
-import pandas as pd
 import re
 import time
 import fitz
 from concurrent.futures import ProcessPoolExecutor
-from tqdm import tqdm
-#from process_file2 import process_file, process_file_wrapper
-from multiprocessing import Pool, cpu_count
 from pdfrw import PdfReader, PdfWriter
 import numpy as np
+from tqdm import tqdm
 import json
-
-
-
+from multiprocessing import cpu_count
+from pyspark.sql import SparkSession, Row
 from datetime import datetime
+import logging
+from pyspark.sql import functions as F
+from pyspark.sql.types import StringType, IntegerType, DateType
+from pyspark import SparkContext as sc
 
+def process_file(page_range, filename, C_dict):
 
-def process_file(vector):
-
-    # recreate the arguments
-    idx = vector[0]  # this is the segment number we have to process
-    cpu = vector[1]  # number of CPUs
-    filename = vector[2]  # document filename
-    C_dict = vector[3]  # the matrix for rendering
+    start, end = page_range
     doc = fitz.open(filename)  # open the document
-    num_pages = doc.page_count  # get number of pages
-
-    # pages per segment: make sure that cpu * seg_size >= num_pages!
-    seg_size = int(num_pages / cpu + 1)
-    seg_from = idx * seg_size  # our first page number
-    seg_to = min(seg_from + seg_size, num_pages)  # last page number
-    data_list = []
+    results = []
 
     def extract_data(keyword, replace_list=None):
         words = get_words(keyword)
@@ -45,17 +34,21 @@ def process_file(vector):
     replace_level = [('\n', ' '), ('LEVEL', '')]
     replace_newline = [('\n', ' ')]
 
-    for i in range(seg_from, seg_to):  # work through our page segment
-        page = doc[i]
-        # Initialize an empty dictionary to store the data            
+    for page_num in range(start, end):
+        # Initialize an empty dictionary to store the data
         data = {}
 
+        page = doc[page_num]
+        
         def get_words(name, page=page, C_dict=C_dict):
-            rect = fitz.Rect(C_dict[name])
-            words = page.get_textbox(rect)
-            return words
+                rect = fitz.Rect(C_dict[name])
+                words = page.get_textbox(rect)
+                return words
+        
+        
 
-        data['Page_Number'] = i
+        data['Page_Number'] = page_num
+
         # Extract the percentages for each achievement level
         for level in ['Advanced', 'Mastery', 'Basic', 'Approaching_Basic', 'Unsatisfactory']:
 
@@ -92,43 +85,33 @@ def process_file(vector):
 
             # Reading_Performance_Achievement_Level            
             columns = ['Reading_Performance_Achievement_Level', 'Literary_Text_Achievement_Level', 'Informational_Text_Achievement_Level', 
-                       'Vocabulary_Achievement_Level', 'Reading_Performance_Achievement_Level_State_Percentages', 'Writing_Performance_Achievement_Level',
-                         'Writing_Performance_Achievement_Level_State_Percentages', 'Written_Expression_Achievement_Level', 'Knowledge&Use_of_Language_Conventions']
+                        'Vocabulary_Achievement_Level', 'Reading_Performance_Achievement_Level_State_Percentages', 'Writing_Performance_Achievement_Level',
+                            'Writing_Performance_Achievement_Level_State_Percentages', 'Written_Expression_Achievement_Level', 'Knowledge&Use_of_Language_Conventions']
 
             for col in columns:
                 data[col] = get_words(col)
 
-#############################################################  
+    #############################################################  
         else:
             data['If_Voided'] = True
-#############################################################             
+            # Subcategories
+
+            # Reading_Performance_Achievement_Level            
+            columns = ['Reading_Performance_Achievement_Level', 'Literary_Text_Achievement_Level', 'Informational_Text_Achievement_Level', 
+                        'Vocabulary_Achievement_Level', 'Reading_Performance_Achievement_Level_State_Percentages', 'Writing_Performance_Achievement_Level',
+                            'Writing_Performance_Achievement_Level_State_Percentages', 'Written_Expression_Achievement_Level', 'Knowledge&Use_of_Language_Conventions']
+
+            for col in columns:
+                data[col] = None
+
+    #############################################################             
             
-        # Append the data for this page to the list
-        data_list.append(data)       
+        
 
-        # return the data for this file
-    return data_list
+        results.append(Row(**data))
 
-
-def reset_log():
-    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-    log_file = f'process_log_{timestamp}.txt'
-    return log_file
-    
-import logging
-
-def process_file_wrapper(vector):
-    log_file = reset_log()
-    logging.basicConfig(filename=log_file, level=logging.INFO)
-    try:
-        logging.info(f"Process {vector[0]} starting")
-        result = process_file(vector)
-        logging.info(f"Process {vector[0]} finished with {len(result)} results")
-
-        return result
-    except Exception as e:
-        logging.error(f"Process {vector[0]} encountered an error: {e}")
-        return []
+    doc.close()
+    return results
 
 def combine_pdfs(Directory, Subjects_in_Headlines, Report_Type):
     
@@ -160,18 +143,26 @@ def combine_pdfs(Directory, Subjects_in_Headlines, Report_Type):
     # Print the running time
     print(f"Running time: {end_time - start_time} seconds")
 
-
-
-
-
 if __name__ == "__main__":
 
-    
-
+    # Initialize Spark session
+    spark = SparkSession.builder.appName("PDFDataExtraction").getOrCreate()
+    sc = spark.sparkContext
 
     # specify the directory where the PDF files are stored
-    Directory = r'E:\testing\pdf\test'
+    Directory = r'E:\testing\pdf'
+    subject = 'ELA'
+    
+    def delete_file(filepath):
+        # Check if the file exists
+        if os.path.exists(filepath):
+            # Delete the file
+            os.remove(filepath)
+            print(f"The cached file has been deleted.")
+        else:
+            print(f"File {filepath} does not exist.")
 
+    
     # Load the config file
     with open(r'E:\Github\LDOE_Projects\LEAP\config.json', 'r') as f:
         config = json.load(f)
@@ -183,45 +174,45 @@ if __name__ == "__main__":
    
     start_time = time.time()
 
-    # Before combining, check if the combined file already exists
-    if os.path.exists(os.path.join(Directory, 'cache', 'combined_file.pdf')):
-        print("Combined file already exists.")
-    else:
-        combine_pdfs(Directory, Subjects_in_Headlines, Report_Type)
+    # specify the file to be deleted
+    filepath = os.path.join(Directory, 'cache', 'combined_file.pdf')
+    
+    combine_pdfs(Directory, Subjects_in_Headlines, Report_Type)
 
     filename = os.path.join(Directory, "cache", "combined_file.pdf")
 
     doc = fitz.open(filename)
 
-    cpu = min(cpu_count(),len(doc))
+    # Set up core numbers for local machine
+    num_pages = len(doc)
+    num_cores = min(cpu_count(), num_pages)  # or however many cores you want to utilize
+    pages_per_core = num_pages // num_cores
+
+    ranges = [(i, min(i+pages_per_core, num_pages)) for i in range(0, num_pages, pages_per_core)]
+
+    # Create an RDD of page number ranges
+    page_number_ranges = sc.parallelize(ranges)
+
+    # Use the map function to process each page
+    results = page_number_ranges.flatMap(lambda page_range: process_file(page_range, filename, C_dict)).collect()
 
     # Close the PDF
     doc.close()
-    # make vectors of arguments for the processes
-    vectors = [(i, cpu, filename, C_dict) for i in range(cpu)]
-    print("Starting %i processes for '%s'." % (cpu, filename))
-
-
-    with ProcessPoolExecutor() as executor:
-        results = list(executor.map(process_file_wrapper, vectors))
-     
+    
     # Convert the results into a DataFrame
-    flat_results = [item for sublist in results for item in sublist]
-    # Convert the results into a PySpark DataFrame
-    df2 = pd.DataFrame(flat_results) 
+    df2 = spark.createDataFrame(results)
 
 
     # Old syntax for extracting Student_Name
-    def extract_student_name(info):
-        match = re.search(r'Student: (.*)\n', info)
-        if match:
-            student_name = match.group(1)
-            if 'Grade:' in student_name:
-                student_name = student_name.split('Grade:')[0]
-            return student_name
-        return None
+    # Extract everything after "Student:" up to the newline
+    df2 = df2.withColumn("Student_Name", F.regexp_extract(F.col("Personal_Information"), r'Student: (.*)\n', 1))
 
-    df2['Student_Name'] = df2['Personal_Information'].apply(extract_student_name)
+    # Handle the special case where 'Grade:' appears inside the student name
+    df2 = df2.withColumn("Student_Name", F.split(F.col("Student_Name"), "Grade:")[0])
+
+    # Trim any whitespace
+    df2 = df2.withColumn("Student_Name", F.trim(F.col("Student_Name")))
+
 
     # Vectorized extraction for the other fields
     patterns = {
@@ -233,88 +224,70 @@ if __name__ == "__main__":
         'DoB': r'Date of Birth: (.*?)\n'
     }
 
-    for column, pattern in patterns.items():
-        df2[column] = df2['Personal_Information'].str.extract(pattern)
-
-
     # Extract the information using the patterns and store in respective columns
     for column, pattern in patterns.items():
-        df2[column] = df2['Personal_Information'].str.extract(pattern)
-
-    # If you want to remove the original 'Personal_Information' column after extraction
-    # df2.drop('Personal_Information', axis=1, inplace=True)
+        df2 = df2.withColumn(column, F.regexp_extract(df2['Personal_Information'], pattern, 1))
 
 
     # Regulate the data in school column
     columns_to_strip = ['Student_Name', 'School', 'Grade', 'LASID', 'School_System', 'DoB']
 
     for col in columns_to_strip:
-        df2[col] = df2[col].str.strip()
+        df2 = df2.withColumn(col, F.trim(df2[col]))
 
     columns_to_clean = ['Reading_Performance_Achievement_Level', 'Literary_Text_Achievement_Level', 'Informational_Text_Achievement_Level', 'Vocabulary_Achievement_Level',
                         'Written_Expression_Achievement_Level', 'Knowledge&Use_of_Language_Conventions', 'Writing_Performance_Achievement_Level']
 
     for col in columns_to_clean:
-        df2[col] = df2[col].str.replace('«««', '').str.replace('\n', ' ')
+        df2 = df2.withColumn(col, F.regexp_replace(F.regexp_replace(df2[col], '«««', ''), '\n', ' '))
 
     def split_percentages(df, subject, source_col):
         target_cols = [f"{subject}_State_Percentage_{desc}" for desc in ['Strong', 'Moderate', 'Weak']]
-        df[target_cols] = df[source_col].str.strip().str.split('\n', expand=True)
+        splits = F.split(F.trim(df[source_col]), '\n')
+        for i, target_col in enumerate(target_cols):
+            df = df.withColumn(target_col, splits[i])
         return df
 
     df2 = split_percentages(df2, 'Reading_Performance_Achievement_Level', 'Reading_Performance_Achievement_Level_State_Percentages')
     df2 = split_percentages(df2, 'Writing_Performance_Achievement_Level', 'Writing_Performance_Achievement_Level_State_Percentages')
 
-    # check for the presence of multiple subjects
-    report_subjects = []
-    report_subjects = list(df2['Report_Subject'].unique())
+    split_name = F.split(df2['Student_Name'], ' ')
+    df2 = df2.withColumn('Student_First_Name', split_name[0])
+    df2 = df2.withColumn('Student_Last_Name', split_name[(F.size(split_name)-1)])
 
-    if len(report_subjects) > 1:
-        raise ValueError("More than one subject found in the files.")
-    else:
-        subject = report_subjects[0]
-
-    if subject == 'English Language Arts':
-        subject = 'ELA'
-
-    # Split the 'Student_Name' column into three new columns 'Student_First_Name', 'Student_Last_Name', and 'Student_Middle_Initial'
-    name_split = df2['Student_Name'].str.split(' ')
-    df2['Student_First_Name'] = name_split.str[0]
-    df2['Student_Last_Name'] = name_split.str[-1]
-    df2['Student_Middle_Initial'] = name_split.str[1:-1].str.join(' ').str.strip()
-    df2.loc[df2['Student_Middle_Initial'] == '', 'Student_Middle_Initial'] = np.nan
+    df2 = df2.withColumn('Student_Middle_Initial', F.when(F.size(split_name) > 2, F.expr('slice(split(Student_Name, " "), 2, size(split(Student_Name, " "))-2)')).otherwise(F.array()))
+    df2 = df2.withColumn('Student_Middle_Initial', F.when(F.expr('concat_ws(" ", Student_Middle_Initial)') == '', None).otherwise(F.expr('concat_ws(" ", Student_Middle_Initial)')))
 
     # Convert the 'DoB' column to datetime format
-    df2['DoB'] = df2['DoB'].replace('--/--/----', np.nan)
-    df2['DoB'] = pd.to_datetime(df2['DoB'], errors='coerce')
-    df2['Summarized_DOB_Day'] = df2['DoB'].dt.day
-    df2['Summarized_DOB_Month'] = df2['DoB'].dt.month
-    df2['Summarized_DOB_Year'] = df2['DoB'].dt.year
+    df2 = df2.withColumn('DoB', F.when(df2['DoB'] == '--/--/----', None).otherwise(df2['DoB']))
+    df2 = df2.withColumn('DoB', F.to_date(df2['DoB'], 'MM/dd/yyyy').cast(DateType()))
+    df2 = df2.withColumn('Summarized_DOB_Day', F.dayofmonth('DoB'))
+    df2 = df2.withColumn('Summarized_DOB_Month', F.month('DoB'))
+    df2 = df2.withColumn('Summarized_DOB_Year', F.year('DoB'))
 
     # Split the 'School' column into two new columns 'School_Code' and 'School_Name'
-    df2[['School_Code', 'School_Name']] = df2['School'].str.split(' ', n=1, expand=True)
-    df2[['School_System_Code', 'School_System_Name']] = df2['School_System'].str.split(' ', n=1, expand=True)
-    df2 = df2.drop(columns=['School_System', 'Reading_Performance_Achievement_Level_State_Percentages', 'Writing_Performance_Achievement_Level_State_Percentages', 'DoB', 'School'])
+    split_school = F.split(df2['School'], ' ', 1)
+    df2 = df2.withColumn('School_Code', split_school[0])
+    df2 = df2.withColumn('School_Name', split_school[1])
 
-    df2 = df2.rename(columns={'Grade': 'Summarized_Grade', 'Student_Performance_Score': f'Scale_Score_{subject}'})
+    split_system = F.split(df2['School_System'], ' ', 1)
+    df2 = df2.withColumn('School_System_Code', split_system[0])
+    df2 = df2.withColumn('School_System_Name', split_system[1])
 
-    df2.to_parquet('E:/testing/Output/Report_Readin_2023_ELA.parquet')
-    df2.to_csv('E:/testing/Output/Report_Readin_2023_ELA.csv')
+    columns_to_drop = ['School_System', 'Reading_Performance_Achievement_Level_State_Percentages', 
+                   'Writing_Performance_Achievement_Level_State_Percentages', 'DoB', 'School']
+    df2 = df2.drop(*columns_to_drop)
+
+    df2 = df2.withColumnRenamed('Grade', 'Summarized_Grade')
+    df2 = df2.withColumnRenamed('Student_Performance_Score', f'Scale_Score_{subject}')
+
+    df2.write.mode("overwrite").parquet('E:/testing/Output/Report_Readin_2023_ELA_v2.parquet')
+
+    df2.write.mode("overwrite").csv('E:/testing/Output/Report_Readin_2023_ELA.csv', header=True)
 
     end_time = time.time()
     # Print the running time
     print(f"Results exported successfully. \nTotal running time: {end_time - start_time} seconds")
-
-    def delete_file(filepath):
-        # Check if the file exists
-        if os.path.exists(filepath):
-            # Delete the file
-            os.remove(filepath)
-            print(f"The cached file has been deleted.")
-        else:
-            print(f"File {filepath} does not exist.")
-
-
 
     # specify the file to be deleted
     filepath = os.path.join(Directory, 'cache', 'combined_file.pdf')
@@ -322,14 +295,10 @@ if __name__ == "__main__":
     # Before deleting, ask for user confirmation
     confirm = input(f"Do you want to delete the cached file {filepath}? (y/n) \n")
 
-
     # If the user confirms, delete the file
     if confirm == 'y':
         delete_file(filepath)
     else:   
         print("File not deleted.")
 
-
-    
-    
 
