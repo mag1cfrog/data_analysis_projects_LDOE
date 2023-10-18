@@ -12,6 +12,8 @@ from pdfrw import PdfReader, PdfWriter
 import numpy as np
 import json
 
+
+
 from datetime import datetime
 
 
@@ -164,6 +166,9 @@ def combine_pdfs(Directory, Subjects_in_Headlines, Report_Type):
 
 if __name__ == "__main__":
 
+    
+
+
     # specify the directory where the PDF files are stored
     Directory = r'E:\testing\pdf\test'
 
@@ -202,7 +207,9 @@ if __name__ == "__main__":
      
     # Convert the results into a DataFrame
     flat_results = [item for sublist in results for item in sublist]
-    df2 = pd.DataFrame(flat_results)
+    # Convert the results into a PySpark DataFrame
+    df2 = pd.DataFrame(flat_results) 
+
 
     # Old syntax for extracting Student_Name
     def extract_student_name(info):
