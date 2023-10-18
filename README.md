@@ -5,7 +5,7 @@ This repository contains Python scripts developed for the Louisiana Department o
 
 ## Projects
 
-### LEAP
+### LEAP (Louisiana Educational Assessment Program)
 
 #### Extract_PDF_Data.py
 - **Purpose**: This script is designed to extract data from PDF files using a parallelized approach.
