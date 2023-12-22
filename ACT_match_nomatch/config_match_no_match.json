@@ -1,0 +1,129 @@
+{
+    "lap_file_path": "f:\\MFDM\\ASP2023\\LAP\\November LAP\\LAP_NOV_20231107.txt",
+    "retire_id_filepath": "c:\\Hanbo Wang\\LAP\\Retired LASIDs as of 10312022.xlsx",
+    "schlist_file_path": "f:\\MFDM\\ASP2023\\SCHLLIST2324_103023.TXT",
+    "output_match_no_match": {"directory": "C:\\Hanbo Wang\\ACT\\match_no_match", "filename": "match_nomatch.xlsx"},
+    "old_new_mapping_path": "c:\\Hanbo Wang\\commonly_used_data\\new_old_site_code_conversion.json",
+    "crosswalk_file_path": "f:\\MFDM\\ASP2023\\ACT\\Crosswalk\\2023-24 ACT crosswalk Updated 121223.xlsx",
+    "SDU_output": {"directory": "C:\\Hanbo Wang\\ACT\\match_no_match", "filename": "SDU.xlsx"},
+
+    "ACT_test_location": "C:\\Hanbo Wang\\ACT\\Data\\history_test_till_23_dec.parquet",
+
+    "LA_files": {"number": 2,
+        "main_file_locations": [
+            "f:\\MFDM\\ACT\\202122 ACT\\1050 file\\final\\act_2022_19la_exchange2_1075_ANON_FIXED_WIDTH.txt",
+            "c:\\Hanbo Wang\\Other test data\\ACT_test_data\\la_parquet\\2022_la.parquet"
+        ],
+        "lasid_file_locations":[
+            "f:\\MFDM\\ACT\\202122 ACT\\1050 file\\final\\2021-22_June_ACT_SDF_ANON_LASID.xlsx",
+            "f:\\MFDM\\ACT\\202223 ACT\\1050 file\\Final\\2022-23_SBD_Final_Anon_LASIDs_updated.xlsx"
+        ],
+        "extra_arguments":[
+            {"mapping_new_LASID_column": "UID_Found"},
+            {"mapping_new_LASID_column": "UID_Found", "file_1050_LASID_column": "RecordID", "alternative_LASID_column": "UID_Found_old"}
+
+        ]
+        },
+        
+    
+    
+    "la_main_file_layout":{
+        "colspecs": [[3, 25], [28, 16], [89, 2], [91, 9], [101, 2], [103, 2], [105, 2], [192, 10], [205, 6],
+            [233, 4], [261, 2], [263, 2], [265, 2], [267, 2], [269, 2], [616, 1], [625, 1],
+            [1058, 10], [1068, 8], [1086, 5]],
+
+        "columns": ["LNAME", "FNAME", "GRADE", "SSN", "DOBMM", "DOBDD", "DOBYY", "LASID_ACT1", "HIGHSCHCD", "TESTDATE",
+            "ENGLISH", "MATH", "READ", "SCIENCE", "COMPOSITE", "STATE_Q1", "STATE_Q10", "LASID_ACT2", "sequenceID",
+            "ROWID"]
+    },
+
+
+    "sitecode_to_exclude_list": ["WC2001"],
+    "precode_to_exclude_list": ["WC2001"],
+
+    "columns_lap": [
+        "DistrictCode", "SchoolCode", "LastName", "FirstName", "Middleinitial",
+        "DOBYear", "DOBMonth", "DOBDay", "Filler1", "Gender", "HispanicLatin",
+        "Native", "Asian", "Black", "Islander", "White", "GradePlacement",
+        "FRLunch", "EdClassFlag", "PrimaryException", "ExceptionCategory",
+        "LEPCode", "LEPIndicatorCode", "LEPfunding", "Section504", "Migrant",
+        "Homeless", "Filler2", "TestType", "MarchUpdate", "Milltary", "Foster",
+        "LASID", "BirthcountryCode", "USentrydate", "LanguageCode", "EntryCode",
+        "ExitCode", "EntryDate", "ExitDate", "VirtualLearner",  "Filler3",
+        "TDRFlag", "IEP_AllSubjects_LAA1", "Scholaship_flag", "TwinFlag",
+        "ELDANoAccommodations", "ELDABraille", "ELDALargePrint", "ELDA_Answer_Record",
+        "ELDA_LAA_AssisTech", "ELDA_Extended_Time", "ELDA_Communica_Assis",
+        "ELDA_Transfer_Answer", "ELDA_Individu_Small_Group", "ELDA_Test_Read_Aloud",
+        "ELDA_LAA_Other", "Filler4", "LEAP_ELA_Text_to_Sp",
+        "LEAP_ELAHumanTstReadAlo", "LEAP_ELANativeLanguWord", "LEAP_ELADirectNativeLa",
+        "LEAP_ELATransAnswers", "LEAP_ELAAnswerRecord", "LEAP_ELAExtendTime",
+        "LEAP_ELAIndivSmallGro", "LEAP_ELACommuAssist", "LEAP_ELAOnlineAccomPap",
+        "LEAP_ELABraille", "LEAP_ELALarge", "LEAP_ELANoAccom", "LEAP_ELA_Recorded_Voice_File", "LEAP_ELA_Kurzweil", "LEAP_MathTexttoSpeech",
+        "LEAP_MathSpanishTest", "LEAP_MathSpanishTestTexttoS", "LEAP_MathTestReadAloud",
+        "LEAP_MathNativeLanWord", "LEAP_MathDir_in_NatiLan", "LEAP_MathTransAnswers",
+        "LEAP_MathAnswerRecord", "LEAP_MathCalculator", "LEAP_MathExtendTime",
+        "LEAP_MathIndiv_orSmallGrp", "LEAP_MathCommuniAssistan", "LEAP_MathOnlineAccommodated",
+        "LEAP_MathBraille", "LEAP_MathLargePrint", "LEAP_MathNoAccommodations", "LEAP_Math_Recorded_Voice_File", "LEAP_Math_Kurzweil", "LEAP_Science_Text-to-Speech", 
+        "LEAP_SciTestReadAloud", "LEAP_SciNativeLanguageWor", "LEAP_Science_Directions_in_Native_Language", "LEAP_SciTransferredAnswers",
+        "LEAP_SciAnswersRecorded", "LEAP_SciExtendedTime", "LEAP_SciIndividualorSmall",
+        "LEAP_SciCommunicationAssis", "LEAP_Science_Online_Accommodated_Paper_Test", "LEAP_SciBraille", "LEAP_ScienceLargePrint",
+        "LEAP_SciNoAccommodations", "LEAP_SciOther", "LEAP_SciAssistiveTechnolog",
+        "LEAP_SciTestAdministered", "LEAP_Science_Recorded_Voice_File", "LEAP_Science_Kurzweil", "LEAP_SSTTexttoSpee", "LEAP_SSTHumanTestRead",
+        "LEAP_SSTNativeLangu", "LEAP_SSTDirections", "LEAP_SSTTransferred",
+        "LEAP_SSTAnswersReco", "LEAP_SSTExtendedTim", "LEAP_SSTIndividual",
+        "LEAP_SSTCommunicatio", "LEAP_SSTOnlineAccom", "LEAP_SSTBraille",
+        "LEAP_SSTLargePrint", "LEAP_SSTNoAccommoda", "LEAP_SSTOther",
+        "LEAP_SSTAssistiveTech", "LEAP_SSTTestAdminis", "LEAP_Social_Studies_Recorded_Voice_File", "LEAP_Social_Studies_Kurzweil", "LEAP_Connect_ELA_Assistive_Technology",
+        "LEAP_Connect_ELA_Accommodated_Paper", "LEAP_Connect_ELA_Braille", "Filler5", "Filler6", "LEAP_Connect_Math_Assistive_Technology", "LEAP_Connect_Math_Accommodated_Paper",
+        "Filler7", "Filler8", "Filler9", "LEAP_Connect_Math_Calculator", "LEAP_Connect_Science_Assistive_Technology", "LEAP_Connect_Science_Accommodated_Paper",
+        "UnCleanedFName",
+        "UnCleanedLName", "LASID_OLD", "DateTimeStamp", "LEAOptInFlg"
+        ],
+    
+    "sort_columns_ACT_score": [
+        "Score_Composite", "priority", "TestDate","Score_English", "Score_Mathematics", "Score_Reading", "Score_Science", 
+        "Subscore_1_English", "Subscore_2_English", "Subscore_3_English", 
+        "Subscore_1_Mathematics", "Subscore_2_Mathematics", "Subscore_3_Mathematics", 
+        "Subscore_4_Mathematics", "Subscore_5_Mathematics", "Subscore_6_Mathematics", 
+        "Subscore_7_Mathematics", "Subscore_8_Mathematics", "Subscore_1_Reading", 
+        "Subscore_2_Reading", "Subscore_3_Reading", "Subscore_1_Science", 
+        "Subscore_2_Science", "Subscore_3_Science"
+        ],
+    
+
+
+        
+    "_comment": "SDU_part",
+
+    "col_to_keep_SDU": ["LASID", "LastName", "FirstName", "Middleinitial", "DOBDay",
+        "DOBMonth","DOBYear", "Gender", "district_code", "site_code", "GradePlacement"],
+    
+    "SDU_new_null_columns": {
+        "list_of_variable_lists": ["base1", "range1", "range2", "base2"],
+        "base1": {"type": "base", "content": ["Student Code", "Filler", "Local Student ID", "Filler_0001", "Address", "City", "State", "Zip Code"]},
+        "range1": {"type": "range", "start": 1, "end": 16, "prefix": "State Use Question "},
+        "range2": {"type": "range", "start": 16, "end": 21, "prefix": "WorkKeys State Use Question "},
+        "base2": {"type": "base", "content": ["Reporting High School Code", "Student Test Code Key (UUID)", "CONTRACT-ID-ENTERPRISE",
+            "Contract Code", "Non-College Reportable"]}
+    },
+
+    "col_to_keep_SDU_final": {
+        "list_of_variable_lists": ["base1", "range1", "range2", "base2"],
+        "base1": {"type": "base", "content": ["Student Code", "Organization Code", "Last Name", "First Name", 
+            "Middle Initial", "Grade", "Date of Birth", "State Student ID", "Filler", "Test Code", 
+            "Delivery Format", "Local Student ID", "Filler_0001", "Gender", "Address",
+            "City", "State", "Zip Code"]},
+        "range1": {"type": "range", "start": 1, "end": 16, "prefix": "State Use Question "},
+        "range2": {"type": "range", "start": 16, "end": 21, "prefix": "WorkKeys State Use Question "},
+        "base2": {"type": "base", "content": ["Reporting High School Code", "Student Test Code Key (UUID)", "CONTRACT-ID-ENTERPRISE",
+            "Contract Code", "Non-College Reportable", "LEAOptInFlg", "Sitecd"]}
+    },
+
+    "SDU_new_fixed_content_columns": [["mc", "Test Code"], ["o", "Delivery Format"]],
+    "SDU_rename_dict": {"Organization_Code": "Organization Code", 
+        "LastName": "Last Name", "FirstName": "First Name", "Middleinitial": "Middle Initial",
+        "GradePlacement": "Grade", "LASID": "State Student ID", "site_code": "Sitecd"}
+
+    
+
+}

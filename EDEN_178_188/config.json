@@ -1,0 +1,36 @@
+{
+    "HS_GRADE_ONE_VALUE": "10",
+    "DUCKDB_DIRECTORY": "C:\\Hanbo Wang\\Other test data\\accountability.db",
+    "SQL_QUERY_LOCATION": "c:\\Git\\LDOE\\EDEN\\23\\178_188\\performance_optimization\\student_level_data_cleaning.sql",
+    "basic_group": ["assessment_administered", "transformed_grade", "proficiency_status"],
+    "subgroups": [
+        ["racial_ethnic"],
+        ["gender"],
+        ["disability_status"],
+        ["english_learner_status"],
+        ["economically_disadvantaged_status"],
+        ["migratory_status"],
+        ["homeless_enrolled_status"],
+        ["foster_care_status"],
+        ["military_connected_student_status"],
+        ["racial_ethnic", "disability_status"],
+        []
+    ],
+    "basic_group_188": ["participation_status", "transformed_grade"],
+    "178_output_directory": "C:\\Hanbo Wang\\EDEN\\178_188\\178_output",
+    "188_output_directory": "C:\\Hanbo Wang\\EDEN\\178_188\\188_output",
+    "178_filename": {"school": "LASCHSTUPERRLA0000001", "district": "LALEASTUPERRLA0000001", "state": "LASEASTUPERRLA0000001"},
+    "188_filename": {"school": "LASCHSTUPARTRL0000001", "district": "LALEASTUPARTRL0000001", "state": "LASEASTUPARTRL0000001"},
+    "formatted_col_to_keep_178": ["file_record_number", "state_code", "state_agency_number", "lea_identifier", "school_identifier", "table_name", 
+        "transformed_grade", "racial_ethnic", "gender", "disability_status", "english_learner_status", "migratory_status", 
+        "economically_disadvantaged_status", "homeless_enrolled_status", "assessment_administered", "filler", "proficiency_status",
+        "foster_care_status", "military_connected_student_status", "total_indicator", "explanation", "Counts"],
+    "formatted_col_to_keep_188": ["file_record_number", "state_code", "state_agency_number", "lea_identifier", "school_identifier", "table_name", 
+        "transformed_grade", "racial_ethnic", "gender", "disability_status", "english_learner_status", "migratory_status", 
+        "economically_disadvantaged_status", "homeless_enrolled_status", "foster_care_status", "military_connected_student_status", "filler", "filler2", "filler3",
+        "participation_status", "total_indicator", "explanation", "Counts"],
+    "report_period": "2022-2023"
+
+}
+
+
