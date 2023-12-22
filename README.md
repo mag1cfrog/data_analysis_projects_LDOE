@@ -7,7 +7,7 @@ This repository contains Python scripts developed for the Louisiana Department o
 
 ### LEAP (Louisiana Educational Assessment Program)
 
-#### Extract_PDF_Data.py
+#### archived\extract_pdf_data_original
 - **Purpose**: This script is designed to extract data from PDF files using a parallelized approach.
 - **Technologies Used**: 
   - **Pandas**: For data manipulation and analysis.
@@ -17,7 +17,7 @@ This repository contains Python scripts developed for the Louisiana Department o
   - Data cleaning and preprocessing using Pandas.
   - Exporting extracted data to desired formats such as CSV or Excel.
 
-#### Extract_PDF_Data_spark.py
+#### extract_pdf_data_spark
 - **Purpose**: An enhanced version of the original script, optimized for larger datasets and distributed computing environments.
 - **Technologies Used**: 
   - **PySpark**: A big data framework that offers distributed data processing capabilities.
