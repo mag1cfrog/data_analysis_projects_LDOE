@@ -14,11 +14,9 @@ The contents of this repository are for demonstration and portfolio purposes onl
   - Python for data processing and analysis.
   - Polars for efficient data manipulation and analysis.
   - JSON for configuration management.
-- **Key Features**:
-  - Utilization of Polars for fast and memory-efficient data processing.
-  - Efficient matching algorithm to compare and contrast large datasets.
-  - Customizable configuration for different data sources.
-  - Comprehensive data preprocessing and cleaning steps.
+- **Highlights**:
+  - Development of efficient algorithms for data matching.
+  - Implementation of data preprocessing and cleaning, showcasing data engineering techniques.
 - **Files**:
   - [Main Script](https://github.com/mag1cfrog/data_anlysis_projects_LDOE/blob/master/ACT_match_nomatch/main.py)
   - [Configuration](https://github.com/mag1cfrog/data_anlysis_projects_LDOE/blob/master/ACT_match_nomatch/config_match_no_match.json)
