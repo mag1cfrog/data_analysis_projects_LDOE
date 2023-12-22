@@ -1,6 +1,7 @@
  
 import fitz 
 
+
 def extract_data(page, keyword, replace_list=None):
     """
     Extracts data from the page based on the keyword and optional replacements.
@@ -17,7 +18,7 @@ def extract_data(page, keyword, replace_list=None):
     return words.strip() if words else words
 
 
-def get_words(page, name):
+def get_words(page, name, coordinate_mappings):
     """
     Gets words from the page based on the name (coordinates).
 

@@ -54,5 +54,13 @@
     
     "Report_Type": "StudentReport",
 
-    "SUBJECT": "ELA"
+    "SUBJECT": "ELA",
+
+    "PDF_DIRECTORY": "E:\\testing\\pdf",
+
+    "OUTPUT_PARQUET_FILE_PATH": "E:\\testing\\Output\\Report_Readin_2023_ELA_v2.parquet",
+
+    "OUTPUT_CSV_FILE_PATH": "E:\\testing\\Output\\Report_Readin_2023_ELA.csv",
+
+    "LOG_DIR": "E:\\testing\\log"
 }
