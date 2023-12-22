@@ -1,56 +1,67 @@
-# LDOE Projects
+# Data Analysis Projects for LDOE
 
 ## Overview
-This repository contains Python scripts developed for the Louisiana Department of Education (LDOE) to extract and process data from PDF files. The scripts demonstrate proficiency in data processing, parallel computing, and big data technologies.
+This repository hosts a collection of data analysis projects developed for the Louisiana Department of Education (LDOE). These projects showcase skills in data processing, analysis, and handling large datasets with various technologies, particularly focusing on the use of Polars and DuckDB.
 
 ## Projects
 
+### ACT Match/No Match
+- **Purpose**: This project involves matching and identifying non-matching records between ACT data and other educational datasets, showcasing the use of Polars for efficient data manipulation.
+- **Technologies Used**: 
+  - Python for data processing and analysis.
+  - Polars for efficient data manipulation and analysis.
+  - JSON for configuration management.
+- **Key Features**:
+  - Utilization of Polars for fast and memory-efficient data processing.
+  - Efficient matching algorithm to compare and contrast large datasets.
+  - Customizable configuration for different data sources.
+  - Comprehensive data preprocessing and cleaning steps.
+- **Files**:
+  - [Main Script](https://github.com/mag1cfrog/data_anlysis_projects_LDOE/blob/master/ACT_match_nomatch/main.py)
+  - [Configuration](https://github.com/mag1cfrog/data_anlysis_projects_LDOE/blob/master/ACT_match_nomatch/config_match_no_match.json)
+  - [Utility Functions](https://github.com/mag1cfrog/data_anlysis_projects_LDOE/blob/master/ACT_match_nomatch/utils.py)
+  - [Data Processing Scripts](https://github.com/mag1cfrog/data_anlysis_projects_LDOE/tree/master/ACT_match_nomatch)
+
+### EDEN 178-188
+- **Purpose**: This project focuses on cleaning and formatting student-level data for EDEN reporting, demonstrating the use of DuckDB and Polars for efficient data handling and analysis.
+- **Technologies Used**: 
+  - DuckDB for efficient database operations.
+  - Polars for high-performance data manipulation.
+  - SQL for data querying and manipulation.
+- **Key Features**:
+  - Integration of DuckDB for optimized data storage and querying.
+  - Use of Polars for fast and memory-efficient data processing.
+  - SQL-based data cleaning and transformation.
+  - Generation of formatted reports for EDEN submission.
+- **Files**:
+  - [Main Script](https://github.com/mag1cfrog/data_anlysis_projects_LDOE/blob/master/EDEN_178_188/main.py)
+  - [Data Calculation](https://github.com/mag1cfrog/data_anlysis_projects_LDOE/blob/master/EDEN_178_188/data_calculation.py)
+  - [DuckDB Operations](https://github.com/mag1cfrog/data_anlysis_projects_LDOE/blob/master/EDEN_178_188/duckdb_operation.py)
+  - [SQL Queries](https://github.com/mag1cfrog/data_anlysis_projects_LDOE/blob/master/EDEN_178_188/student_level_data_cleaning.sql)
+
 ### LEAP (Louisiana Educational Assessment Program)
-
-#### archived\extract_pdf_data_original
-- **Purpose**: This script is designed to extract data from PDF files using a parallelized approach.
+- **Purpose**: Scripts for extracting and processing data from PDF files.
 - **Technologies Used**: 
-  - **Pandas**: For data manipulation and analysis.
-  - **ProcessPoolExecutor**: To achieve parallel processing, enhancing the speed and efficiency of data extraction.
+  - Pandas and PySpark for data processing.
+  - Python for scripting.
 - **Features**:
-  - Efficient data extraction from multiple PDFs simultaneously.
-  - Data cleaning and preprocessing using Pandas.
-  - Exporting extracted data to desired formats such as CSV or Excel.
-
-#### extract_pdf_data_spark
-- **Purpose**: An enhanced version of the original script, optimized for larger datasets and distributed computing environments.
-- **Technologies Used**: 
-  - **PySpark**: A big data framework that offers distributed data processing capabilities.
-- **Features**:
-  - Scalable data extraction suitable for large datasets.
-  - Utilizes the power of distributed computing to process data faster and more efficiently.
-  - Offers flexibility in handling various data formats and sources.
+  - Efficient data extraction from PDFs.
+  - Scalable data processing suitable for large datasets.
+- **Files**:
+  - [Data Extraction Tools](https://github.com/mag1cfrog/data_anlysis_projects_LDOE/tree/master/LEAP/Extract_PDF_Data_spark/PDFDataExtractionTools)
+  - [Main Script](https://github.com/mag1cfrog/data_anlysis_projects_LDOE/blob/master/LEAP/Extract_PDF_Data_spark/main.py)
 
 ## Usage
-
-### Prerequisites
-- Python 3.x
-- Libraries: Pandas, PySpark
-- Java (for PySpark)
-
-### Running the Scripts
-1. Clone the repository: `git clone https://github.com/mag1cfrog/LDOE_Projects.git`
-2. Navigate to the LEAP directory: `cd LDOE_Projects/LEAP`
-3. For the original script: `python Extract_PDF_Data.py [path_to_PDFs]`
-4. For the PySpark version: `spark-submit Extract_PDF_Data_spark.py [path_to_PDFs]`
-
-Replace `[path_to_PDFs]` with the directory containing your PDF files.
+- Python 3.x is required.
+- Additional libraries: Pandas, PySpark, Polars, DuckDB (as per project requirements).
 
 ## Contribution
-Contributions are welcome! If you have improvements or bug fixes, please:
-1. Fork the repository.
-2. Create a new branch for your features.
-3. Submit a pull request.
+Contributions are welcome! Please fork the repository, create a new branch for your features, and submit a pull request.
 
 ## License
-This project is licensed under the GPL-3.0 License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the GPL-3.0 License. See the [LICENSE](https://github.com/mag1cfrog/data_anlysis_projects_LDOE/blob/master/LICENSE) file for details.
 
 ## Contact
-For further inquiries, collaborations, or feedback, please reach out to:
+For inquiries, collaborations, or feedback, please reach out to:
 - Email: [harrywong2017@gmail.com](mailto:harrywong2017@gmail.com)
 - LinkedIn: [Hanbo Wang](https://www.linkedin.com/in/hanbo-wang-mag1cfrog/)
