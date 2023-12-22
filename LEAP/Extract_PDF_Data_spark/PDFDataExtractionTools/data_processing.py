@@ -1,8 +1,9 @@
+import re
+import fitz
 from pyspark.sql import functions as F
 from pyspark.sql.types import DateType  
-import re
 from data_extraction import get_words
-import fitz
+
 
 def process_spark_dataframe(df, SUBJECT):
     df = df.withColumn(
@@ -125,6 +126,7 @@ def split_percentages(df, SUBJECT, source_col):
             df = df.withColumn(target_col, splits[i])
         return df
 
+
 def parse_percentages(words):
     """
     Parses percentages from the extracted words.
@@ -135,7 +137,7 @@ def parse_percentages(words):
     return re.findall(r"(≥?≤?\d+%|NR|N/A)", words) if words else None
 
 
-def process_achievement_levels(page, levels):
+def process_achievement_levels(page, levels, coordinate_mappings, filename):
     """
     Processes achievement levels and extracts corresponding data.
 
@@ -145,7 +147,7 @@ def process_achievement_levels(page, levels):
     """
     data = {}
     for level in levels:
-        words = get_words(page, f"Percent_Achievement_Level_{level}")
+        words = get_words(page, f"Percent_Achievement_Level_{level}", coordinate_mappings)
         percentages = parse_percentages(words)
         if len(percentages) == 3:
             (
@@ -160,7 +162,8 @@ def process_achievement_levels(page, levels):
             print(len(percentages))
     return data
 
-def process_page(page, coordinate_mappings):
+
+def process_page(page, coordinate_mappings, filename):
     """
     Processes a single page and extracts all necessary data.
 
@@ -170,7 +173,7 @@ def process_page(page, coordinate_mappings):
     """
 
     def extract_and_clean_data(field_name, replace_patterns=None):
-        words = get_words(page, field_name)
+        words = get_words(page, field_name, coordinate_mappings)
         if words and replace_patterns:
             for old, new in replace_patterns:
                 words = words.replace(old, new)
@@ -184,7 +187,7 @@ def process_page(page, coordinate_mappings):
 
     # Process achievement levels
     levels = ["Advanced", "Mastery", "Basic", "Approaching_Basic", "Unsatisfactory"]
-    data.update(process_achievement_levels(page, levels))
+    data.update(process_achievement_levels(page, levels, coordinate_mappings, filename))
 
     # Extract other data
     # Title Section
@@ -192,7 +195,7 @@ def process_page(page, coordinate_mappings):
         data["Report_Title"],
         data["Report_Subject"],
         data["Report_Season_Year"],
-    ) = get_words(page, "Report_Title_Section").split("\n")
+    ) = get_words(page, "Report_Title_Section", coordinate_mappings).split("\n")
 
     # Using the extract_and_clean_data function
     data["Personal_Information"] = extract_and_clean_data("Personal_Information")
@@ -228,7 +231,7 @@ def process_page(page, coordinate_mappings):
     ]
 
     for col in columns:
-        data[col] = get_words(page, col) if not_voided else None
+        data[col] = get_words(page, col, coordinate_mappings) if not_voided else None
 
     return data
 
@@ -249,6 +252,6 @@ def process_file(page_range, filename, coordinate_mappings):
 
     for page_num in range(start, end):
         page = doc[page_num]
-        results.append(process_page(page, coordinate_mappings))
+        results.append(process_page(page, coordinate_mappings, filename))
     doc.close()
     return results

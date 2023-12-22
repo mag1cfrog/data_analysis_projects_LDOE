@@ -1,63 +1,45 @@
 import os
+import time
+import logging
 from multiprocessing import cpu_count
 import fitz
 from pyspark.sql import SparkSession
-import time
-import sys 
-#import ExtractPDFDataTools 
-from ExtractPDFDataTools.data_processing import process_spark_dataframe, process_file
-
-import logging
-
-CONFIGURATION_FILE = r"E:\Github\LDOE_Projects\LEAP\config.json"
-PDF_DIRECTORY = r"E:\testing\pdf"
-OUTPUT_PARQUET_FILE_PATH = r"E:\testing\Output\Report_Readin_2023_ELA_v2.parquet"
-OUTPUT_CSV_FILE_PATH = r"E:\testing\Output\Report_Readin_2023_ELA.csv"
-LOG_DIR = r"E:\testing\log"
+from PDFDataExtractionTools.data_processing import process_spark_dataframe, process_file
+from PDFDataExtractionTools.file_operations import delete_file, combine_pdfs
+from utils import setup_logging, load_config, handle_file_exceptions
 
 
-if __name__ == "__main__":
-    
-    print(sys.path)
 
-    # Initialize Spark session
+CONFIGURATION_FILE = "LEAP\\Extract_PDF_Data_spark\\config.json"
+
+
+def initialize_spark_session():
+    """Initialize and return a Spark session."""
     spark = SparkSession.builder.master("local[*]").appName("PDFDataExtraction").getOrCreate()
     sc = spark.sparkContext
-    #sc.addPyFile("E:/Github/LDOE_Projects/LEAP/Extract_PDF_Data_spark/data_processing.py")
+    return spark, sc
 
-    # Setup logging
-    setup_logging(LOG_DIR)
 
-    # Load the config file
-    config = load_config(CONFIGURATION_FILE)
+def setup_logging_and_load_config(config_file):
+    """Set up logging and load the configuration file."""
+    config = load_config(config_file)
+    setup_logging(config['LOG_DIR'])
+    return config
 
-    # Get the configuration parameters
-    coordinate_mappings = config["coordinate_mappings"]
-    Variable_List = config["Variable_List"]
-    Subjects_in_Headlines = config["Subjects_in_Headlines"]
-    Report_Type = config["Report_Type"]
-    SUBJECT = config["SUBJECT"]
 
-    start_time = time.time()
-
-    # specify the file to be deleted
-    filepath = os.path.join(PDF_DIRECTORY, "cache", "combined_file.pdf")
-
-    combine_pdfs(PDF_DIRECTORY, Subjects_in_Headlines, Report_Type)
-    
+def combine_and_validate_pdfs(config):
+    """Combine PDFs and ensure the combined file is accessible."""
+    combine_pdfs(config['PDF_DIRECTORY'], config["Subjects_in_Headlines"], config["Report_Type"])
+    filename = os.path.join(config['PDF_DIRECTORY'], "cache", "combined_file.pdf")
     try:
-        filename = os.path.join(PDF_DIRECTORY, "cache", "combined_file.pdf")
         doc = fitz.open(filename)
-    except FileNotFoundError:
-        logging.error(f"The file {filename} does not exist, cannot open it.")
-        sys.exit(1)
-    except PermissionError:
-        logging.error(f"Permission denied when accessing the file {filename}.")
-        sys.exit(1)
     except Exception as e:
-        logging.exception("An unexpected error occurred while opening the file.")
-        sys.exit(1)
+        handle_file_exceptions(e, filename)
+    return doc
 
+
+def process_pdf_pages(doc, sc, config):
+    """Divide the workload and process the pages in the PDF document."""
     # Set up core numbers for local machine
     num_pages = len(doc)
     num_cores = min(cpu_count(), num_pages)  # or however many cores you want to utilize
@@ -74,48 +56,40 @@ if __name__ == "__main__":
 
     # Use the map function to process each page
     results = page_number_ranges.flatMap(
-        lambda page_range: process_file(page_range, filename, coordinate_mappings)
+        lambda page_range: process_file(page_range, doc, config["coordinate_mappings"])
     ).collect()
 
     # Close the PDF
     try:
         doc.close()
     except Exception as e:
-        logging.exception("An error occurred while closing the file.")
+        logging.exception(f"An error occurred while closing the file: {e}.")
 
-    # Convert the results into a DataFrame
-    df2 = spark.createDataFrame(results)
+    return results
 
-    df2 = process_spark_dataframe(df2, SUBJECT)
 
-    # Export the results
+def export_results(spark, results, config):
+    """Convert results to DataFrame and export them."""
+    df = spark.createDataFrame(results)
+    df = process_spark_dataframe(df, config["SUBJECT"])
+
     try:
-        df2.write.mode("overwrite").parquet(OUTPUT_PARQUET_FILE_PATH)
-        df2.write.mode("overwrite").csv(OUTPUT_CSV_FILE_PATH, header=True)
+        df.write.mode("overwrite").parquet(config['OUTPUT_PARQUET_FILE_PATH'])
+        df.write.mode("overwrite").csv(config['OUTPUT_CSV_FILE_PATH'], header=True)
     except PermissionError:
         logging.error("Permission denied when writing to the destination.")
-        sys.exit(1)
     except IOError as e:
         logging.exception("An I/O error occurred while writing to file.")
-        sys.exit(1)
     except Exception as e:
         logging.exception("An unexpected error occurred while writing to file.")
-        sys.exit(1)
 
-    # Get the end time
-    end_time = time.time()
-    # Print the running time
-    print(
-        f"Results exported successfully. \nTotal running time: {end_time - start_time} seconds"
-    )
 
-    # specify the file to be deleted
-    filepath = os.path.join(PDF_DIRECTORY, "cache", "combined_file.pdf")
-
-    # Before deleting, ask for user confirmation
+def cleanup_and_close(spark, config):
+    """Handle cache file deletion and close Spark session."""
+    filepath = os.path.join(config['PDF_DIRECTORY'], "cache", "combined_file.pdf")
     confirm = input(f"Do you want to delete the cached file {filepath}? (y/n) \n")
     logging.info(f"User selected: '{confirm}'")
-    # If the user confirms, delete the file
+
     if confirm.lower() == "y":
         try:
             delete_file(filepath)
@@ -128,10 +102,31 @@ if __name__ == "__main__":
     else:
         print("File not deleted.")
 
-    # Close the Spark session
     try:
         spark.stop()
     except Exception as e:
         logging.exception(f"An error occurred while closing the Spark session: {e}")
 
-    logging.info("Script finished.")
+
+def main():
+    """Main function """
+    spark, sc = initialize_spark_session()
+    config = setup_logging_and_load_config(CONFIGURATION_FILE)
+
+    start_time = time.time()
+
+    doc = combine_and_validate_pdfs(config)
+    results = process_pdf_pages(doc, sc, config)
+    export_results(results, config)
+
+    end_time = time.time()
+    print(f"Results exported successfully. \nTotal running time: {end_time - start_time} seconds")
+
+    cleanup_and_close(spark, config)
+
+    print("Script finished.")
+
+
+if __name__ == "__main__":
+    
+    main()

@@ -1,7 +1,7 @@
 import logging
 import json
 import os
-from datetime import datetime
+import sys
 
 
 def setup_logging(log_dir, level=logging.INFO):
@@ -21,6 +21,28 @@ def setup_logging(log_dir, level=logging.INFO):
     console.setFormatter(formatter)
     logging.getLogger("").addHandler(console)
 
+
 def load_config(config_file):
     with open(config_file, "r") as f:
         return json.load(f)
+
+
+def handle_file_exceptions(exception, filename):
+    """
+    Handle different file-related exceptions.
+
+    Args:
+    - exception: The exception that was raised.
+    - filename: The name of the file that caused the exception.
+    """
+    if isinstance(exception, FileNotFoundError):
+        logging.error(f"The file {filename} does not exist, cannot open it.")
+    elif isinstance(exception, PermissionError):
+        logging.error(f"Permission denied when accessing the file {filename}.")
+    else:
+        logging.exception("An unexpected error occurred: " + str(exception))
+    
+    # Exit the program since it's a critical error
+    sys.exit(1)
+
+

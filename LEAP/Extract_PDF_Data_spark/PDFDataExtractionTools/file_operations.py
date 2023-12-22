@@ -3,12 +3,14 @@ import time
 from pdfrw import PdfReader, PdfWriter
 from rich.progress import Progress
 
+
 def delete_file(filepath):
     if os.path.exists(filepath):
         os.remove(filepath)
         print(f"The cached file has been deleted.")
     else:
         print(f"File {filepath} does not exist.")
+
 
 def combine_pdfs(PDF_DIRECTORY, Subjects_in_Headlines, Report_Type):
     """
