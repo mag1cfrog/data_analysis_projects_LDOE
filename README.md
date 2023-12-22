@@ -48,7 +48,7 @@ Contributions are welcome! If you have improvements or bug fixes, please:
 3. Submit a pull request.
 
 ## License
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the GPL-3.0 License. See the [LICENSE](LICENSE) file for details.
 
 ## Contact
 For further inquiries, collaborations, or feedback, please reach out to:

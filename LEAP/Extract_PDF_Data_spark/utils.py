@@ -2,7 +2,6 @@ import logging
 import json
 import os
 import sys
-from datetime import datetime
 
 
 def setup_logging(log_dir, level=logging.INFO):
@@ -45,4 +44,5 @@ def handle_file_exceptions(exception, filename):
     
     # Exit the program since it's a critical error
     sys.exit(1)
+
 
