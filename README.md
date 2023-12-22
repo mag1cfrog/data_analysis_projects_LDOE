@@ -30,8 +30,8 @@ The contents of this repository are for demonstration and portfolio purposes onl
   - Polars for high-performance data manipulation.
   - SQL for data querying and manipulation.
 - **Highlights**:
-  - Development of efficient algorithms for data matching.
-  - Implementation of data preprocessing and cleaning, showcasing data engineering techniques.
+  - Advanced data storage and querying techniques.
+  - Efficient data processing and analysis, typical of data engineering roles.
 - **Files**:
   - [Main Script](https://github.com/mag1cfrog/data_anlysis_projects_LDOE/blob/master/EDEN_178_188/main.py)
   - [Data Calculation](https://github.com/mag1cfrog/data_anlysis_projects_LDOE/blob/master/EDEN_178_188/data_calculation.py)
