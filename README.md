@@ -39,13 +39,27 @@ The contents of this repository are for demonstration and portfolio purposes onl
   - [SQL Queries](https://github.com/mag1cfrog/data_anlysis_projects_LDOE/blob/master/EDEN_178_188/student_level_data_cleaning.sql)
 
 ### LEAP (Louisiana Educational Assessment Program)
-- **Objective**: Highlights my data analysis proficiency in extracting and processing data from PDF files, a skill valuable in both data analysis and engineering roles.
+#### LEAP - Original Project (Optimized for Local Machines)
+- **Objective**: This original version of the LEAP project demonstrates my proficiency in optimizing data processing on local machines. It utilizes Pandas in combination with multiprocessing/multithreading techniques.
 - **Technologies Used**: 
-  - Pandas and PySpark for data processing.
-  - Python for scripting.
+  - **Pandas**: For efficient data manipulation and analysis.
+  - **Multiprocessing/Multithreading**: To enhance performance and speed on local machines by parallelizing data processing tasks.
 - **Highlights**:
-  - Efficient data extraction and processing techniques.
-  - Scalable solutions suitable for large datasets.
+  - Custom implementation of parallel processing techniques to significantly improve the efficiency of data operations in Pandas.
+  - Tailored for scenarios where data processing needs to be optimized for single-machine environments.
+  - Effective handling of large datasets with resource-efficient methods.
+
+#### LEAP - Enhanced Version with PySpark (Scalable for Big Data)
+- **Objective**: The enhanced version of the LEAP project showcases my skills in handling big data using PySpark, emphasizing scalability and distributed computing.
+- **Technologies Used**: 
+  - **PySpark**: A powerful tool for big data processing, offering distributed data processing capabilities.
+- **Highlights**:
+  - Scalable data processing suitable for very large datasets.
+  - Utilizing distributed computing to process data faster and more efficiently across clusters.
+  - Demonstrates my ability to adapt data processing strategies to different scales and environments, from local machines to big data ecosystems.
+
+#### About this project
+The LEAP projects reflect my versatile approach to data processing, showcasing the ability to optimize performance on local machines and scale up for big data challenges. These projects illustrate my adaptability and skill in employing the right tools and techniques to suit the specific needs of the data and the computational environment.
 - **Files**:
   - [Data Extraction Tools](https://github.com/mag1cfrog/data_anlysis_projects_LDOE/tree/master/LEAP/Extract_PDF_Data_spark/PDFDataExtractionTools)
   - [Main Script](https://github.com/mag1cfrog/data_anlysis_projects_LDOE/blob/master/LEAP/Extract_PDF_Data_spark/main.py)
